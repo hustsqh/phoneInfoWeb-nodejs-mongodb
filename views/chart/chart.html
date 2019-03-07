@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>Line Chart</title>
+	<script src="/js/chart/Chart.bundle.js"></script>
+	<script src="/js/chart/utils.js"></script>
+	<script src="/js/lib/jquery-1.8.1.min.js"></script>
+	<script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+	<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+	<style>
+	canvas{
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+	}
+	</style>
+</head>
+
+<body>
+	<div style="width:80%;">
+		<canvas id="canvas"></canvas>
+	</div>
+	<!-- <input type="file" onchange="jsReadFiles(this.files)"/> -->
+	<div id="box">
+		<!-- <input type="button" @click="sendmsg()" value="getsomething"> -->
+		<label>开始时间</label>
+		<input id="startTime" type="datetime-local" value="2019-01-01T13:59:59"/>
+		<label>结束时间</label>
+		<input id="endTime" type="datetime-local" value="2019-01-10T13:59:59"/>
+		<label>设备</label> 
+		<select id="selectPhone" name="">
+			<% printData.phone.forEach(function(phone){ %>
+				<option value="<%-phone%>" ><%-phone%></option>
+			<%});%>
+		</select>
+		<select id="batteryValue">
+			<% printData.batteryValues.forEach(function(value){ %>
+				<% if (value == printData.label){ %>
+					<option value="<%-value%>" selected><%-value%></option>
+				<% } else {%>
+					<option value="<%-value%>"><%-value%></option>
+				<% }%>
+			<% }); %>
+		</select>
+		<input type="button" value="提交" @click="submitPhone()">
+	</div>
+
+	<br>
+	<br>
+
+	<script>
+		//var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+		var config = {
+			type: 'line',
+			data: {
+				labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+				datasets: [{
+					label: 'My First dataset',
+					backgroundColor: window.chartColors.red,
+					borderColor: window.chartColors.red,
+					data: [
+						randomScalingFactor(),
+						randomScalingFactor(),
+						randomScalingFactor(),
+						randomScalingFactor(),
+						randomScalingFactor(),
+						randomScalingFactor(),
+						randomScalingFactor()
+					],
+					fill: false,
+				}]
+			},
+			options: {
+				responsive: true,
+				title: {
+					display: true,
+					text: "<%-printData.phoneSn%>"
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: false,
+				},
+				hover: {
+					mode: 'nearest',
+					intersect: true
+				},
+				scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Month'
+						}
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Value'
+						}
+					}]
+				}
+			}
+		};
+		
+
+		window.onload = function() {
+			var ctx = document.getElementById('canvas').getContext('2d');
+			config.data.datasets[0].data = <%-JSON.stringify(printData.value)%>;
+			config.data.datasets[0].label = <%-JSON.stringify(printData.label)%>;
+			config.data.labels = <%-JSON.stringify(printData.time)%>;
+			window.myLine = new Chart(ctx, config);
+			var vm = new Vue({
+				el:'#box',
+				data:{
+					msg:'Hello World!',
+				},
+				methods:{
+					submitPhone:function(){
+						var myselect = document.getElementById("selectPhone");
+						var index = myselect.selectedIndex;
+						var value = myselect.options[index].text;
+			
+						var batteryValueSelect = document.getElementById("batteryValue");
+						var index = batteryValueSelect.selectedIndex;
+						var batteryValue = batteryValueSelect.options[index].text;
+
+						var startTime = document.getElementById("startTime").value;
+						var endTime = document.getElementById("endTime").value;
+						this.$http.post('/update', {phonesn:value,batteryValue:batteryValue,startTime:startTime,endTime:endTime}, {emulateJSON:true}).then(function(res){
+							config.data.labels = res.body.time
+							config.data.datasets[0].data = res.body.value
+							config.data.datasets[0].label = batteryValue
+							config.options.title.text = value
+							window.myLine.update();
+						}, function(res){
+							console.log("res.status")
+						})
+					}
+				}
+			});
+		};
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="/lib/echarts.js"></script>
+        <!-- <script src="/lib/esl.js"></script> -->
+        <script src="/lib/config.js"></script>
+        <script src="/lib/jquery.min.js"></script>
+        <script src="/lib/facePrint.js"></script>
+        <script src="/lib/testHelper.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/lib/reset.css">
+        <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+        <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script> 
+        
+        <script src="https://cdn.bootcss.com/popper.js/1.14.7/umd/popper.min.js"></script>
+        <link href="/js/lib/bootstrap-4.3.1-dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="/js/lib/bootstrap-select-1.13.5-dist/css/bootstrap-select.min.css" rel="stylesheet" />
+        <script src="/js/lib/jquery-1.9.1.min.js"></script>
+        <script src="/js/lib/bootstrap-4.3.1-dist/js/bootstrap.min.js"></script>
+        <script src="/js/lib/bootstrap-select-1.13.5-dist/js/bootstrap-select.min.js"></script>
+        
+    </head>
+    <body>
+        <style>
+            h1 {
+                line-height: 60px;
+                height: 60px;
+                background: #146402;
+                text-align: center;
+                font-weight: bold;
+                color: #eee;
+                font-size: 14px;
+            }
+            .chart {
+                height: 500px;
+            }
+        </style>
+
+        <div style="width:80%;height: 80%;" class="chart" id="main"></div>
+
+        <div style="margin-left: 200px; margin-top: 20px;" id="box">
+            <label >设备</label> 
+            <select id="selectPhone" data-width="50%" data-size="10" class="selectpicker" multiple data-max-options="5" data-live-search="true" name="">
+                <% printData.phone.forEach(function(phone){ %>
+                    <% if(phone == printData.phoneSn) { %>
+                        <option value="<%-phone%>" selected><%-phone%></option>
+                    <% } else {%>
+                        <option value="<%-phone%>" ><%-phone%></option>
+                    <% }%>
+                <%});%>
+            </select>
+            <select id="batteryValue" class="selectpicker">
+                <% printData.batteryValues.forEach(function(value){ %>
+                    <% if (value == printData.label){ %>
+                        <option value="<%-value%>" selected><%-value%></option>
+                    <% } else {%>
+                        <option value="<%-value%>"><%-value%></option>
+                    <% }%>
+                <% }); %>
+            </select>
+            <input type="button" value="提交" @click="submitPhone()">
+            <br>
+            <br>
+            <label>手机信息：</label>
+            <div id="phoneTable" style="margin-right: 400px"></div>
+        </div>
+        
+        <script>
+
+            var echarts;
+            var chart;
+            var myChart;
+            var groupCategories = [];
+            var groupColors = [];
+
+            chart = myChart = echarts.init(document.getElementById('main'));
+
+            var date = <%-JSON.stringify(printData.time)%>;
+            var data = <%-JSON.stringify(printData.value)%>;
+
+            var optionXX = {
+                tooltip: {
+                    trigger: 'axis',
+                    position: function (pt) {
+                        return [pt[0], '10%'];
+                    }
+                },
+                legend: {
+                    data: ['<%-printData.phoneSn%>']
+                },
+                title: {
+                    left: 100,
+                    text: '电池信息曲线',
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: 'none'
+                        },
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                grid: {
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: date
+                },
+                yAxis: {
+                    type: 'value',
+                    boundaryGap: [0, '10%']
+                },
+                dataZoom: [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }, {
+                    start: 0,
+                    end: 10,
+                    handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                    handleSize: '80%',
+                    handleStyle: {
+                        color: '#fff',
+                        shadowBlur: 3,
+                        shadowColor: 'rgba(0, 0, 0, 0.6)',
+                        shadowOffsetX: 2,
+                        shadowOffsetY: 2
+                    }
+                }],
+                series: [
+                    {
+                        name:'<%-printData.phoneSn%>',
+                        type:'line',
+                        smooth:true,
+                        symbol: 'none',
+                        sampling: 'average',
+                        itemStyle: {
+                            normal: {
+                                color: 'rgb(255, 70, 131)'
+                            }
+                        },
+                        areaStyle: {
+                            normal: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                                    offset: 0,
+                                    color: 'rgb(255, 158, 68)'
+                                }, {
+                                    offset: 1,
+                                    color: 'rgb(255, 70, 131)'
+                                }])
+                            }
+                        },
+                        data: data
+                    }
+                ]
+            };
+
+            chart.setOption(optionXX);
+
+            var vm = new Vue({
+                el:'#box',
+                data:{
+                    msg:'Hello World!',
+                },
+                methods:{
+                    submitPhone:function(){
+                        var myselect = document.getElementById("selectPhone");
+                        var values = [];
+                        var array = Array.prototype.slice.call(myselect.selectedOptions);
+                        array.forEach(function(opt){
+                            values.push(myselect.options[opt.index].text);
+                        });
+                        if(values.length == 0){
+                            alert("选择的设备为空");
+                            return;
+                        }
+
+                        var batteryValueSelect = document.getElementById("batteryValue");
+                        var index = batteryValueSelect.selectedIndex;
+                        var batteryValue = batteryValueSelect.options[index].text;
+                        this.$http.post('/echartUpdate', {phonesnList:values,batteryValue:batteryValue}, {emulateJSON:true}).then(function(res){
+                            // var option = chart.getOption()
+                            updatePhoneInfo(myChart, res, batteryValue);
+                            createTableHtml(res.body.phoneInfos);
+                        }, function(res){
+                            console.log("res.status")
+                        })
+                    }
+                }
+            });
+
+            function updatePhoneInfo(chart, res, batteryL){
+                optionXX.legend.data = res.body.legends
+                optionXX.xAxis.data = res.body.time.sort()
+                optionXX.series = []
+
+                res.body.phones.forEach(function(value, index){
+                    var onePhone = {
+                            symbolSize: 5,
+                            //关键，需要把data的格式设置为[x,y]来和x，y轴对应
+                            data: [],
+                            type: 'line',
+                            smooth:true,
+                            symbol: 'none',
+                            sampling: 'average',
+                            areaStyle: {
+                                normal: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                                        offset: 0,
+                                        color: 'rgb(255, 158, 68)'
+                                    }, {
+                                        offset: 1,
+                                        color: 'rgb(255, 70, 131)'
+                                    }])
+                                }
+                            },
+                        };
+                    onePhone.name = value.name;
+                    onePhone.data = value.data;
+                    optionXX.series.push(onePhone);
+                })
+                chart.clear();
+                chart.setOption(optionXX, true);
+            }
+
+            function updatePhoneTable(res){
+                var $table = $('#phoneInfoTable')
+                
+            }
+
+            function createTableHtml(phoneInfoList){
+                var myTable = document.getElementById("phoneTable");
+                var str = '<table class="table">\
+                            <thead>\
+                                <tr>\
+                                    <th scope="col">#</th>\
+                                    <th scope="col">phoneid</th>\
+                                    <th scope="col">devicesn</th>\
+                                    <th scope="col">brand</th>\
+                                    <th scope="col">model</th>\
+                                    <th scope="col">sdk</th>\
+                                    <th scope="col">serial</th>\
+                                    <th scope="col">memory</th>\
+                                    <th scope="col">flash</th>\
+                                </tr>\
+                            </thead>'
+
+                phoneInfoList.forEach(function(value, index){
+                    str += '<tbody>\
+                            <tr>\
+                            <th scope="row">' + (index+1) + '</th>\
+                            <td>' + ((value.phonesn)? value.phonesn : "null") + '</td>\
+                            <td>' + ((value.devicesn)? value.devicesn : "null")  + '</td>\
+                            <td>' + ((value.brand)? value.brand : "null")  + '</td>\
+                            <td>' + ((value.model)? value.model : "null")  + '</td>\
+                            <td>' + ((value.sdk)? value.sdk : "null")  + '</td>\
+                            <td>' + ((value.serial)? value.serial : "null")  + '</td>\
+                            <td>' + ((value.memory)? value.memory : "null") + '</td>\
+                            <td>' + ((value.flash)? value.flash : "null") + '</td>\
+                            </tr>\
+                            </tbody>'
+                });
+                myTable.innerHTML = str + '</table>';
+            }
+
+            window.onload = function(){
+                createTableHtml(<%-JSON.stringify(printData.phoneInfo)%>)
+            }
+        </script>
+    </body>
+</html>

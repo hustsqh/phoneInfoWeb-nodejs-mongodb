@@ -1,0 +1,19 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.3",
+    "echarts": "^4.2.0-rc.2",
+    "ejs": "^2.6.1",
+    "express": "3.0.0beta7",
+    "jade": "^1.11.0",
+    "mongodb": "^3.1.10",
+    "mongoose": "^5.4.0",
+    "redis": "^2.8.0",
+    "sqlite3": "^4.0.4"
+  }
+}
