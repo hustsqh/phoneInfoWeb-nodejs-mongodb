@@ -28,7 +28,7 @@ under the License.
         <script src="/lib/jquery.min.js"></script>
         <script src="/lib/facePrint.js"></script>
         <script src="/lib/testHelper.js"></script>
-        <!-- <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="stylesheet" href="/lib/reset.css">
         <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
         <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script> 
@@ -38,8 +38,7 @@ under the License.
         <link href="/js/lib/bootstrap-select-1.13.5-dist/css/bootstrap-select.min.css" rel="stylesheet" />
         <script src="/js/lib/jquery-1.9.1.min.js"></script>
         <script src="/js/lib/bootstrap-4.3.1-dist/js/bootstrap.min.js"></script>
-        <script src="/js/lib/bootstrap-select-1.13.5-dist/js/bootstrap-select.min.js"></script> -->
-        
+        <script src="/js/lib/bootstrap-select-1.13.5-dist/js/bootstrap-select.min.js"></script>
     </head>
 
     <body>
@@ -58,14 +57,23 @@ under the License.
             }
         </style>
 
-        <div id="chartContainer">
-
+        <div style="margin-left: 100px; margin-top: 20px; margin-bottom: 20px;" id="box">
+            <label >设备</label> 
+            <select id="selectPhoneCount" data-size="10" class="selectpicker">
+            </select>
+            <select id="batteryValue" class="selectpicker">
+                <% printData.batteryValues.forEach(function(value){ %>
+                    <% if (value == printData.batteryInfoType){ %>
+                        <option value="<%-value%>" selected><%-value%></option>
+                    <% } else {%>
+                        <option value="<%-value%>"><%-value%></option>
+                    <% }%>
+                <% }); %>
+            </select>
+            
+            <input type="button" value="提交" @click="submitPhone()" class="btn btn-primary">
         </div>
-
-        <div style="width:50%;height: 800;float:left;" class="chart" id="main1"></div>
-        <div style="width:50%;height: 800;float:left;" class="chart" id="main2"></div>
-        <div style="width:50%;height: 800;float:left;" class="chart" id="main3"></div>
-        <div style="width:50%;height: 800;float:left;" class="chart" id="main4"></div>
+        <div id="chartContainer"></div>
         
         <script>
             var optionXX = {
@@ -148,25 +156,74 @@ under the License.
                 ]
             };
 
+            var phoneCount = <%-JSON.stringify(printData.phoneCount)%>;
+            var onceCount =  <%-JSON.stringify(printData.onceCount)%>;
+            var phoneCountSelect = document.getElementById("selectPhoneCount");
+            var selectHtml = ''
+            var maxItem = phoneCount/onceCount;
+            for(var i = 0; i < maxItem; i++){
+                var value = (i * onceCount + 1) + '-' + ((i >= (maxItem -1))? phoneCount:(i * onceCount + onceCount));
+                if(i == 0){
+                    selectHtml+= '<option value="' + value + '" selected>' + value +'</option>';
+                }else{
+                    selectHtml+= '<option value="' + value + '">' + value +'</option>';
+                }
+            }
+            phoneCountSelect.innerHTML = selectHtml;
+
+            function updateCharts(phoneListParam){
+                var divCon = document.getElementById("chartContainer");
+                var divText = "";
+                phoneListParam.forEach(function(value, index){
+                    divText += '<div style="width:50%;height:800;margin-bottom:20px;float:left;" class="chart" id="main' + index + '"></div>';
+                });
+                divCon.innerHTML = divText;
+
+                phoneListParam.forEach(function(value, index){
+                    var chart = echarts.init(document.getElementById('main' + index));
+                    var headMsg = value.phonesn + '-' + ((value.phoneInfo['brand'])? value.phoneInfo['brand']:'') + '-' 
+                        + ((value.phoneInfo['model'])? value.phoneInfo['model']:'') + '-' + ((value.phoneInfo['devicesn'])? value.phoneInfo['devicesn']:'');
+                    optionXX.legend.data[0] = headMsg;
+                    optionXX.xAxis.data = value.time;
+                    optionXX.series[0].name = headMsg;
+                    optionXX.series[0].data = value.data;
+                    chart.setOption(optionXX)
+                });
+            }
+
             var phoneList = <%-JSON.stringify(printData.phoneList)%>;
+            updateCharts(phoneList)
 
-            var divCon = document.getElementById("chartContainer");
-            var divText = "";
-            phoneList.forEach(function(value, index){
-                divText += '<div style="width:50%;height: 800;float:left;" class="chart" id="main' + index + '"></div>';
+            var vm = new Vue({
+                el:'#box',
+                data:{
+                    msg:'Hello World!',
+                },
+                methods:{
+                    submitPhone:function(){
+                        var myselect = document.getElementById("selectPhoneCount");
+                        var index = myselect.selectedIndex;
+                        var phoneCountValue = myselect.options[index].text;
+                        var regResult = phoneCountValue.match(/(\d+)-(\d+)/);
+                        if(!(regResult && regResult.length == 3)){
+                            alert("string invalid!");
+                            return;
+                        }
+                        var phoneMin = regResult[1];
+                        var phoneMax = regResult[2];
+                        
+                        var batteryValueSelect = document.getElementById("batteryValue");
+                        var index = batteryValueSelect.selectedIndex;
+                        var batteryValue = batteryValueSelect.options[index].text;
+                        this.$http.post('/allUpdate', {phoneMin:phoneMin,phoneMax:phoneMax,batteryValue:batteryValue}, {emulateJSON:true}).then(function(res){
+                            updateCharts(res.body.phoneList);
+                        }, function(res){
+                            console.log("res.status");
+                        })
+                    }
+                }
             });
-            divCon.innerHTML = divText;
 
-            phoneList.forEach(function(value, index){
-                var chart = echarts.init(document.getElementById('main' + index));
-                var headMsg = value.phonesn + '-' + ((value.phoneInfo['brand'])? value.phoneInfo['brand']:'') + '-' 
-                    + ((value.phoneInfo['model'])? value.phoneInfo['model']:'') + '-' + ((value.phoneInfo['devicesn'])? value.phoneInfo['devicesn']:'');
-                optionXX.legend.data[0] = headMsg;
-                optionXX.xAxis.data = value.time;
-                optionXX.series[0].name = headMsg;
-                optionXX.series[0].data = value.data;
-                chart.setOption(optionXX)
-            });
         </script>
     </body>
 </html>

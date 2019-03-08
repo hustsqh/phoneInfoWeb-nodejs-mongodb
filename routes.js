@@ -9,4 +9,5 @@ exports.setRequestUrl=function(app){
     app.get('/', echart.initEchart)
     app.post('/echartUpdate', echart.updateEChart)
     app.get("/all", echart.allPhones)
+    app.post("/allUpdate", echart.allPhonesUpdate)
 }
