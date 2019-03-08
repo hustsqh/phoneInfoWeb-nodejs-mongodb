@@ -72,7 +72,7 @@ under the License.
             </select>
 
             <input type="button" value="提交" @click="submitPhone()" class="btn btn-primary">
-            <label><input style="margin-left:20px;" type="checkbox" checked id="showNoDataCheckbox"> 是否显示无数据手机</label>
+            <label><input style="margin-left:20px;" type="checkbox" checked id="showNoDataCheckbox"> 显示无数据手机</label>
         </div>
         <div id="chartContainer"></div>
         
@@ -172,6 +172,9 @@ under the License.
             }
             phoneCountSelect.innerHTML = selectHtml;
 
+            var isDocumentReady = false;
+            var showAllChart = true;
+
             function updateCharts(phoneListParam){
                 var divCon = document.getElementById("chartContainer");
                 var divText = "";
@@ -181,7 +184,8 @@ under the License.
                 divCon.innerHTML = divText;
 
                 phoneListParam.forEach(function(value, index){
-                    var chart = echarts.init(document.getElementById('main' + index));
+                    var view = document.getElementById('main' + index);
+                    var chart = echarts.init(view);
                     var headMsg = value.phonesn + '-' + ((value.phoneInfo['brand'])? value.phoneInfo['brand']:'') + '-' 
                         + ((value.phoneInfo['model'])? value.phoneInfo['model']:'') + '-' + ((value.phoneInfo['devicesn'])? value.phoneInfo['devicesn']:'');
                     optionXX.legend.data[0] = headMsg;
@@ -189,6 +193,13 @@ under the License.
                     optionXX.series[0].name = headMsg;
                     optionXX.series[0].data = value.data;
                     chart.setOption(optionXX)
+                    if(isDocumentReady){
+                        if((value.time.length == 0) && !showAllChart){
+                            view.style.display="none";
+                        }else{
+                            view.style.display="";
+                        }
+                    }
                 });
             }
 
@@ -226,13 +237,11 @@ under the License.
             });
 
             $(document).ready(function(){
+                isDocumentReady = true;
                 $("#showNoDataCheckbox").click(function(){
                     // alert("click " + $(this).is(':checked'));
-                    if($(this).is(':checked')){
-                        hideOrShowChartDiv(false);
-                    }else{
-                        hideOrShowChartDiv(true);
-                    }
+                    showAllChart = $(this).is(':checked')
+                    hideOrShowChartDiv(!showAllChart)
                 })
 
                 function hideOrShowChartDiv(needHide){
