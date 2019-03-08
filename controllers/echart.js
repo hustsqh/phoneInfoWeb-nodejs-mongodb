@@ -199,5 +199,122 @@ exports.allPhonesUpdate = function(req, res){
         // res.render('chart/multi_phones.html',{printData:printData});
         res.send(JSON.stringify(printData));
     })();
+}
 
+
+exports.getDeviceList = function(req, res){
+    var printData = new Object;
+    printData.batteryValues = ['batteryStatus', 'current', 'batteryVoltage', 'cpuUsage', 'batteryTemp', 'batteryLevel', 'cpuTemp'];
+
+    (async function(){
+        try{
+            var client = new MongoClient(dburl);
+            await client.connect();
+            var dbconn = client.db('mydb');
+        }catch(err){
+            console.log("connect to db failed!");
+            res.render('chart/echart_device.html',{printData:printData});
+            return;
+        }
+
+        var batteryInfoType = "batteryLevel";
+        var collectionPhoneSet = dbconn.collection("phoneSnSet");
+        var collectionBatterySet = dbconn.collection("batterySet");
+        var devicesnList = await collectionPhoneSet.distinct('devicesn');
+
+        printData.batteryInfoType = batteryInfoType;
+        printData.devicesnList = devicesnList;
+        printData.devicesn = devicesnList[0];
+        var dataList = await collectionBatterySet.find({deviceSN:devicesnList[0]}).sort({timeISO:1}).toArray();
+        printData.dataList = dataList;
+        printData.timeList = [];
+        printData.phoneList = [];
+        printData.phoneSnList = [];
+        for(var i = 0; i < dataList.length; i++){
+            tempPhone = null;
+            printData.timeList.push(dataList[i]['timeStamp']);
+            for(var j = 0; j < printData.phoneList.length; j++){
+                if(printData.phoneList[j].phonesn == dataList[i]['phonesn']){
+                    var tempPhone = printData.phoneList[j];
+                    break;
+                }
+            }
+            if(!tempPhone){
+                var tempPhone = new Object;
+                tempPhone.phonesn = dataList[i]['phonesn'];
+
+                tempPhone.data = [];
+                printData.phoneList.push(tempPhone);
+                printData.phoneSnList.push(dataList[i]['phonesn']);
+            }
+            tempPhone.data.push([dataList[i]['timeStamp'], dataList[i][batteryInfoType]])
+        }
+
+        printData.phoneInfoList = [];
+        for(var i = 0; i < printData.phoneSnList.length; i++){
+            var phoneInfo = await collectionPhoneSet.find({"phonesn":printData.phoneSnList[i]}).toArray();
+            printData.phoneInfoList.push(phoneInfo[0]);
+        }
+        client.close();
+        res.render('chart/echart_device.html',{printData:printData});
+    })();
+}
+
+exports.updateDeviceList = function(req, res){
+    console.log("request:" + req.body.devicesn +  ",batteryValue:" + req.body.batteryValue);
+
+    var printData = new Object;
+    
+    (async function(){
+        try{
+            var client = new MongoClient(dburl);
+            await client.connect();
+            var dbconn = client.db('mydb');
+        }catch(err){
+            console.log("connect to db failed!");
+            res.render('chart/mult_phones.html',{printData:printData});
+            return;
+        }
+
+        var batteryInfoType = req.body.batteryValue;
+        var collectionPhoneSet = dbconn.collection("phoneSnSet");
+        var collectionBatterySet = dbconn.collection("batterySet");
+        // var devicesnList = await collectionPhoneSet.distinct('devicesn');
+
+        printData.batteryInfoType = batteryInfoType;
+        // printData.devicesnList = devicesnList;
+        printData.devicesn = req.body.devicesn;
+        var dataList = await collectionBatterySet.find({deviceSN:printData.devicesn}).sort({timeISO:1}).toArray();
+        printData.dataList = dataList;
+        printData.timeList = [];
+        printData.phoneList = [];
+        printData.phoneSnList = [];
+        for(var i = 0; i < dataList.length; i++){
+            tempPhone = null;
+            printData.timeList.push(dataList[i]['timeStamp']);
+            for(var j = 0; j < printData.phoneList.length; j++){
+                if(printData.phoneList[j].phonesn == dataList[i]['phonesn']){
+                    var tempPhone = printData.phoneList[j];
+                    break;
+                }
+            }
+            if(!tempPhone){
+                var tempPhone = new Object;
+                tempPhone.phonesn = dataList[i]['phonesn'];
+
+                tempPhone.data = [];
+                printData.phoneList.push(tempPhone);
+                printData.phoneSnList.push(dataList[i]['phonesn']);
+            }
+            tempPhone.data.push([dataList[i]['timeStamp'], dataList[i][batteryInfoType]])
+        }
+
+        printData.phoneInfoList = [];
+        for(var i = 0; i < printData.phoneSnList.length; i++){
+            var phoneInfo = await collectionPhoneSet.find({"phonesn":printData.phoneSnList[i]}).toArray();
+            printData.phoneInfoList.push(phoneInfo[0]);
+        }
+        client.close();
+        res.send(JSON.stringify(printData));
+    })();
 }
