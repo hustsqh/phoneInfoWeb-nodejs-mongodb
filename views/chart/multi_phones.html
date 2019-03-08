@@ -70,8 +70,9 @@ under the License.
                     <% }%>
                 <% }); %>
             </select>
-            
+
             <input type="button" value="提交" @click="submitPhone()" class="btn btn-primary">
+            <label><input style="margin-left:20px;" type="checkbox" checked id="showNoDataCheckbox"> 是否显示无数据手机</label>
         </div>
         <div id="chartContainer"></div>
         
@@ -224,6 +225,30 @@ under the License.
                 }
             });
 
+            $(document).ready(function(){
+                $("#showNoDataCheckbox").click(function(){
+                    // alert("click " + $(this).is(':checked'));
+                    if($(this).is(':checked')){
+                        hideOrShowChartDiv(false);
+                    }else{
+                        hideOrShowChartDiv(true);
+                    }
+                })
+
+                function hideOrShowChartDiv(needHide){
+                    $('.chart').each(function(){
+                        var chart = echarts.getInstanceByDom($(this)[0])
+                        if(chart.getOption().xAxis[0].data.length == 0){
+                            if(needHide){
+                                $(this).hide()    
+                            }else{
+                                $(this).show()
+                            }
+                            
+                        }
+                    })
+                }
+            });
         </script>
     </body>
 </html>

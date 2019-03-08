@@ -115,7 +115,7 @@ exports.allPhones = function(req, res){
         var collectionPhoneSet = dbconn.collection("phoneSnSet");
         var phoneSnList = await collectionPhoneSet.find({}).sort({phonesn:1}).toArray();
         var collectionBatterySet = dbconn.collection("batterySet");
-        var onceCount = 20
+        var onceCount = 10
         for(var i = 0; i < onceCount; i++){
             if(i >= phoneSnList.length){
                 break;
