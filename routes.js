@@ -1,12 +1,12 @@
 
 exports.setRequestUrl=function(app){
-    var chart = require('./controllers/chart')
-    app.get('/simple', chart.initChart)
-    app.post('/update', chart.updateChart)
-    app.get('/all', chart.allChart)
-    app.get('/timeline', chart.timeline)
+	var chart = require('./controllers/chart')
+    app.get('/simple_old', chart.initChart)
+    app.post('/update_old', chart.updateChart)
+    app.get('/timeline_old', chart.timeline)
 
     var echart = require('./controllers/echart')
     app.get('/', echart.initEchart)
     app.post('/echartUpdate', echart.updateEChart)
+    app.get("/all", echart.allPhones)
 }

@@ -95,3 +95,47 @@ exports.updateEChart = function(req, res){
         client.close();
     })();
 }
+
+exports.allPhones = function(req, res){
+    var printData = new Object;
+    printData.phoneList = [];
+
+    (async function(){
+        try{
+            var client = new MongoClient(dburl);
+            await client.connect();
+            var dbconn = client.db('mydb');
+        }catch(err){
+            console.log("connect to db failed!");
+            res.render('chart/mult_phones.html',{printData:printData});
+            return;
+        }
+
+        var batteryInfoType = "batteryLevel";
+        var collectionPhoneSet = dbconn.collection("phoneSnSet");
+        var phoneSnList = await collectionPhoneSet.find({}).sort({phonesn:1}).toArray();
+        var collectionBatterySet = dbconn.collection("batterySet");
+        for(var i = 0; i < 4; i++){
+            var phoneData = new Object;
+            phoneData.data = [];
+            phoneData.time = [];
+            
+            var sn = phoneSnList[i]["phonesn"];
+            phoneData.phonesn = sn;
+            phoneData.phoneInfo = phoneSnList[i];
+
+            var result = await collectionBatterySet.find({"phonesn":sn}).sort({timeISO:1}).toArray();
+            result.forEach(function(value, index){
+                phoneData.time.push(value["timeStamp"]);
+                phoneData.data.push(value[batteryInfoType]);
+            })
+            if(phoneData.time.length == 0){
+                continue;
+            }
+            printData.phoneList.push(phoneData);
+        }
+        printData.batteryInfoType = batteryInfoType;
+        client.close();
+        res.render('chart/multi_phones.html',{printData:printData});
+    })();
+}
